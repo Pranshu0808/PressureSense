@@ -35,7 +35,7 @@ socket.onmessage = (event) => {
 
         if (!sensorObj) return;
 
-        sensorObj.value = sensor.sensorValue;
+        sensorObj.value = Number(((sensor.sensorValue * 50) / 4095).toFixed(1));
         sensorObj.active = true;
 
         sensorObj.values.push(sensor.sensorValue);
