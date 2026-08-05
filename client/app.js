@@ -23,7 +23,12 @@ socket.onmessage = (event) => {
     if (!payload.pressure_data) return;
 
     payload.pressure_data.forEach(sensor => {
-
+         // Right Foot ke saare 16 sensors ko 0 kar do
+for (let i = 16; i < 32; i++) {
+    sensors[i].value = 0;
+    sensors[i].active = false;
+    sensors[i].values = Array(16).fill(0);
+}
         // const side = sensor.side === 0 ? "L" : "R";
 
         //const id = sensor.sensorId + 1;
