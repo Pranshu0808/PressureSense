@@ -35,7 +35,7 @@ socket.onmessage = (event) => {
 
         if (!sensorObj) return;
 
-       const pressure = Number(((sensor.sensorValue * 50) / 4095).toFixed(1));
+       const pressure = Number(((sensor.sensorValue * 4095) / 4095).toFixed(1));
 
       sensorObj.value = pressure;
       sensorObj.active = true;
