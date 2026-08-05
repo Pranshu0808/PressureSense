@@ -1,3 +1,29 @@
+/* ===========================
+   BACKEND WEBSOCKET CONNECTION
+=========================== */
+
+const socket = new WebSocket("wss://pressure-sense-backend.onrender.com");
+
+socket.onopen = () => {
+    console.log("✅ Connected to Backend");
+};
+
+socket.onerror = (err) => {
+    console.error("❌ WebSocket Error", err);
+};
+
+socket.onclose = () => {
+    console.log("⚠️ WebSocket Closed");
+};
+
+socket.onmessage = (event) => {
+
+    const payload = JSON.parse(event.data);
+
+    console.log("📡 Live Data:", payload);
+
+};
+
 /* STATE */
 let activeScreen = 'screen-welcome';
 let patientData = { name: '', email: '', age: '', weight: '' };
