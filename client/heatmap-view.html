@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PressureSense AI - Left Foot Plantar Pressure Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #070d14;
+      --panel: #0d1622;
+      --panel-light: #132235;
+      --line: #1c2d42;
+      --text: #e8f0f7;
+      --muted: #788ca2;
+      --cyan: #00d2ff;
+      --green: #3ad38d;
+      --blue: #226cf6;
+      --yellow: #f8c135;
+      --orange: #ff8c2b;
+      --red: rgb(255, 0, 0);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 12px 20px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+    }
+
+    h1 { margin: 0; font-size: 17px; font-weight: 600; }
+    .subtitle { font: 10px 'DM Mono', monospace; color: var(--muted); margin-top: 2px; }
+
+    .btn {
+      background: #09121d;
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .btn:hover { border-color: var(--cyan); }
+    .btn.active { background: #11364d; color: #dffbff; border-color: var(--cyan); }
+    .btn.primary { background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border: none; font-weight: 600; }
+
+    /* LAYOUT WORKSPACE */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 16px;
+      flex: 1;
+    }
+
+    /* MAP PANEL */
+    .map-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .map-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .sub-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .map-stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 35px;
+      flex: 1;
+      position: relative;
+    }
+
+    /* REALISTIC FOOT CANVAS CONTAINER */
+    .foot-container {
+      width: 240px;
+      height: 500px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .foot-canvas {
+      position: absolute;
+      width: 240px;
+      height: 500px;
+      z-index: 2;
+    }
+
+    /* COP INDICATOR */
+    .cop-dot {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid var(--cyan);
+      box-shadow: 0 0 12px var(--cyan), 0 0 24px var(--cyan);
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      transition: all 0.2s ease-out;
+    }
+
+    /* COLOR BAR LEGEND */
+    .pressure-legend {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 380px;
+      gap: 10px;
+      font: 10px 'DM Mono', monospace;
+      color: var(--muted);
+    }
+
+    .legend-bar {
+      width: 14px;
+      flex: 1;
+      border-radius: 7px;
+      background: linear-gradient(to top, 
+        #03102d 0%, 
+        #0055ff 20%, 
+        #00d2ff 40%, 
+        #00ff66 60%, 
+        #ffff00 80%, 
+        #ff0000 100%);
+      box-shadow: 0 0 12px rgba(0,0,0,0.6);
+    }
+
+    /* RIGHT ANALYSIS PANEL */
+    .analysis-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .card-title {
+      font: 11px 'DM Mono', monospace;
+      color: var(--cyan);
+      margin-bottom: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* REGIONAL BREAKDOWN */
+    .region-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .region-box {
+      background: var(--panel-light);
+      border: 1px solid var(--line);
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .region-box div { font-size: 10px; color: var(--muted); }
+    .region-box b { font: 600 15px 'DM Mono', monospace; color: var(--text); display: block; margin-top: 4px; }
+
+    /* GAIT PHASE TRACKER */
+    .gait-tracker {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .gait-step {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      background: var(--panel-light);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 10px;
+      color: var(--muted);
+      margin: 0 3px;
+    }
+
+    .gait-step.active {
+      background: rgba(0, 210, 255, 0.15);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    /* RECOMMENDATIONS */
+    .rec-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px;
+      background: var(--panel-light);
+      border-left: 3px solid var(--cyan);
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .rec-item:last-child { margin-bottom: 0; }
+    .rec-icon { font-size: 18px; }
+    .rec-title { font-weight: 600; font-size: 12px; color: var(--text); }
+    .rec-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .map-footer {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font: 11px 'DM Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">🦶</div>
+      <div>
+        <h1>2D Plantar Pressure Heatmap</h1>
+        <div class="subtitle">High-Resolution Continuous Thermal Surface Analysis</div>
+      </div>
+    </div>
+    <div>
+      <button class="btn primary" onclick="window.close()">Close Window ✖</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <!-- LEFT: FOOT HEATMAP MAP -->
+    <main class="map-card">
+      <div class="map-head">
+        <div class="sub-tag"><span>✓</span> LEFT FOOT MAP</div>
+        <span style="font-family:'DM Mono'; font-size:11px; color:var(--green)">● LIVE STREAMING (16 FSRs)</span>
+      </div>
+
+      <div class="map-stage">
+        <!-- COLOR BAR -->
+        <div class="pressure-legend">
+          <span>High (420 kPa)</span>
+          <div class="legend-bar"></div>
+          <span>Low (0 kPa)</span>
+        </div>
+
+        <!-- FOOT HEATMAP CONTAINER -->
+        <div class="foot-container">
+          <canvas id="footCanvas" class="foot-canvas"></canvas>
+          <div id="copIndicator" class="cop-dot" title="Center of Pressure (CoP)"></div>
+        </div>
+      </div>
+
+      <div class="map-footer">
+        <span>● CoP Vector Tracking: Active</span>
+        <span id="peakValLabel">Peak Load: 385 kPa</span>
+        <span>Unit: kPa</span>
+      </div>
+    </main>
+
+    <!-- RIGHT: ANALYSIS & RECOMMENDATIONS -->
+    <aside class="analysis-panel">
+      <!-- REGIONAL BREAKDOWN -->
+      <div class="card">
+        <div class="card-title">
+          <span>Plantar Regional Breakdown</span>
+          <span style="color:var(--green)">Normal Balance</span>
+        </div>
+        <div class="region-grid">
+          <div class="region-box">
+            <div>Toes (Nodes 1-5)</div>
+            <b id="valToes">210 kPa</b>
+          </div>
+          <div class="region-box">
+            <div>Forefoot (Nodes 6-9)</div>
+            <b id="valForefoot" style="color:var(--orange)">325 kPa</b>
+          </div>
+          <div class="region-box">
+            <div>Midfoot / Arch (Nodes 10-12)</div>
+            <b id="valMidfoot">140 kPa</b>
+          </div>
+          <div class="region-box">
+            <div>Heel (Nodes 13-16)</div>
+            <b id="valHeel" style="color:var(--red)">385 kPa</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAIT CYCLE TRACKER -->
+      <div class="card">
+        <div class="card-title">Gait Cycle Phase</div>
+        <div class="gait-tracker">
+          <div class="gait-step" id="phase1">Heel Strike</div>
+          <div class="gait-step active" id="phase2">Mid Stance</div>
+          <div class="gait-step" id="phase3">Toe Off</div>
+        </div>
+      </div>
+
+      <!-- AI RECOMMENDATIONS -->
+      <div class="card" style="flex: 1;">
+        <div class="card-title">Smart AI Recommendations</div>
+        
+        <div class="rec-item">
+          <div class="rec-icon">👟</div>
+          <div>
+            <div class="rec-title">Heel Cushion Recommended</div>
+            <div class="rec-desc">Sustained high load detected on Left Heel (385 kPa). Targeted gel heel pad advised.</div>
+          </div>
+        </div>
+
+        <div class="rec-item">
+          <div class="rec-icon">🦶</div>
+          <div>
+            <div class="rec-title">Medium Arch Support</div>
+            <div class="rec-desc">Arch pressure is well-supported (140 kPa). Maintains natural foot gait alignment.</div>
+          </div>
+        </div>
+
+        <div class="rec-item">
+          <div class="rec-icon">🏃</div>
+          <div>
+            <div class="rec-title">Footwear: Neutral Running Shoes</div>
+            <div class="rec-desc">Optimal CoP path during Mid-Stance indicates balanced pronation.</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    /* 16 FSR SENSOR ANATOMICAL POSITIONS (Left Foot Normalized %) */
+    const sensors = [
+      { id: 1, x: 38, y: 11, val: 210 },  // Big Toe
+      { id: 2, x: 52, y: 9,  val: 180 },  // 2nd Toe
+      { id: 3, x: 65, y: 12, val: 150 },  // 3rd Toe
+      { id: 4, x: 76, y: 17, val: 130 },  // 4th Toe
+      { id: 5, x: 84, y: 25, val: 90 },   // 5th Toe
+      { id: 6, x: 35, y: 28, val: 320 },  // 1st Metatarsal
+      { id: 7, x: 50, y: 27, val: 340 },  // 2nd Metatarsal
+      { id: 8, x: 65, y: 29, val: 310 },  // 3rd Metatarsal
+      { id: 9, x: 80, y: 35, val: 260 },  // 5th Metatarsal
+      { id: 10, x: 32, y: 46, val: 140 }, // Arch Inner
+      { id: 11, x: 50, y: 48, val: 120 }, // Midfoot Center
+      { id: 12, x: 72, y: 52, val: 160 }, // Midfoot Outer
+      { id: 13, x: 38, y: 76, val: 370 }, // Heel Medial
+      { id: 14, x: 52, y: 80, val: 385 }, // Heel Center
+      { id: 15, x: 66, y: 76, val: 360 }, // Heel Lateral
+      { id: 16, x: 52, y: 90, val: 290 }  // Heel Base
+    ];
+
+    /* DRAW REALISTIC ANATOMICAL LEFT FOOT PATH */
+    function drawFootSilhouette(ctx, w, h) {
+      ctx.beginPath();
+      // Toes & Outer Contour Path
+      ctx.moveTo(w * 0.38, h * 0.05);
+      ctx.bezierCurveTo(w * 0.55, h * 0.02, w * 0.85, h * 0.08, w * 0.90, h * 0.25);
+      ctx.bezierCurveTo(w * 0.95, h * 0.35, w * 0.85, h * 0.55, w * 0.78, h * 0.68);
+      ctx.bezierCurveTo(w * 0.72, h * 0.82, w * 0.70, h * 0.94, w * 0.52, h * 0.95);
+      ctx.bezierCurveTo(w * 0.35, h * 0.94, w * 0.32, h * 0.82, w * 0.32, h * 0.68);
+      ctx.bezierCurveTo(w * 0.15, h * 0.52, w * 0.22, h * 0.32, w * 0.25, h * 0.22);
+      ctx.bezierCurveTo(w * 0.27, h * 0.12, w * 0.28, h * 0.06, w * 0.38, h * 0.05);
+      ctx.closePath();
+    }
+
+    function renderHeatmap() {
+      const canvas = document.getElementById('footCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = 240;
+      const h = 500;
+      canvas.width = w;
+      canvas.height = h;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 1. Draw Deep Blue Foot Silhouette Base
+      drawFootSilhouette(ctx, w, h);
+      ctx.fillStyle = '#0a1d36';
+      ctx.fill();
+      ctx.strokeStyle = '#1d3e66';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 2. Clip Heatmap to Foot Outline ONLY
+      ctx.save();
+      drawFootSilhouette(ctx, w, h);
+      ctx.clip();
+
+      // 3. Render Smooth Continuous Heatmap (Screen Blending)
+      ctx.globalCompositeOperation = 'screen';
+
+      sensors.forEach(s => {
+        const px = (s.x / 100) * w;
+        const py = (s.y / 100) * h;
+        const radius = 70; // Blended overlapping radius
+
+        const grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
+        
+        // Pressure-Based Multi-stop Color Gradient
+        const norm = s.val / 420;
+        if (norm > 0.7) {
+          grad.addColorStop(0, 'rgba(255, 0, 0, 0.95)');
+          grad.addColorStop(0.3, 'rgba(255, 140, 0, 0.8)');
+          grad.addColorStop(0.6, 'rgba(0, 230, 255, 0.4)');
+        } else if (norm > 0.4) {
+          grad.addColorStop(0, 'rgba(0, 255, 100, 0.9)');
+          grad.addColorStop(0.4, 'rgba(0, 210, 255, 0.6)');
+          grad.addColorStop(0.8, 'rgba(0, 80, 255, 0.3)');
+        } else {
+          grad.addColorStop(0, 'rgba(0, 180, 255, 0.8)');
+          grad.addColorStop(0.5, 'rgba(0, 60, 220, 0.4)');
+        }
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(px, py, radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.restore();
+
+      // 4. Calculate & Render Center of Pressure (CoP)
+      let totalP = sensors.reduce((acc, s) => acc + s.val, 0) || 1;
+      let copX = sensors.reduce((acc, s) => acc + (s.x * s.val), 0) / totalP;
+      let copY = sensors.reduce((acc, s) => acc + (s.y * s.val), 0) / totalP;
+
+      const copDot = document.getElementById('copIndicator');
+      copDot.style.left = `${copX}%`;
+      copDot.style.top = `${copY}%`;
+    }
+
+    function updateReadouts() {
+      // Dynamic Simulation Updates
+      const toesVal = Math.round(sensors.slice(0, 5).reduce((a,b)=>a+b.val,0)/5);
+      const forefootVal = Math.round(sensors.slice(5, 9).reduce((a,b)=>a+b.val,0)/4);
+      const midfootVal = Math.round(sensors.slice(9, 12).reduce((a,b)=>a+b.val,0)/3);
+      const heelVal = Math.round(sensors.slice(12, 16).reduce((a,b)=>a+b.val,0)/4);
+
+      document.getElementById('valToes').textContent = `${toesVal} kPa`;
+      document.getElementById('valForefoot').textContent = `${forefootVal} kPa`;
+      document.getElementById('valMidfoot').textContent = `${midfootVal} kPa`;
+      document.getElementById('valHeel').textContent = `${heelVal} kPa`;
+
+      const maxVal = Math.max(...sensors.map(s => s.val));
+      document.getElementById('peakValLabel').textContent = `Peak Load: ${maxVal} kPa`;
+    }
+
+    // Dynamic Live Stream Loop
+    setInterval(() => {
+      sensors.forEach(s => {
+        s.val = Math.max(30, Math.min(410, s.val + Math.round((Math.random() - 0.5) * 16)));
+      });
+      renderHeatmap();
+      updateReadouts();
+    }, 300);
+
+    // Initial Load
+    renderHeatmap();
+    updateReadouts();
+  </script>
+</body>
+</html>

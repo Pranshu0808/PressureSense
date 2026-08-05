@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pressure Padded Sole | Clinical Foot Assessment System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- html2pdf.js for PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+  <!-- STEP 1: ONBOARDING / INTRO SCREEN -->
+  <div id="screen-welcome" class="flow-screen active-screen">
+    <div class="welcome-card">
+      <div class="brand-header">
+        <span class="logo-orb">🦶</span>
+        <h1>Pressure Padded Sole</h1>
+        <p>Smart Plantar Assessment System</p>
+      </div>
+
+      <form id="onboardingForm" onsubmit="handleOnboardingSubmit(event)">
+        <h3>Patient Registration</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Full Name</label>
+            <input type="text" id="initName" placeholder="e.g. Pranshu Sharma" required>
+          </div>
+          <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="initEmail" placeholder="e.g. pranshu@example.com" required>
+          </div>
+          <div class="input-group">
+            <label>Age</label>
+            <input type="number" id="initAge" placeholder="23" required>
+          </div>
+          <div class="input-group">
+            <label>Weight (kg)</label>
+            <input type="number" id="initWeight" placeholder="74" required>
+          </div>
+        </div>
+        <button type="submit" class="primary-btn">Proceed to Hardware Setup →</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- STEP 2: HARDWARE CONNECT SCREEN -->
+  <div id="screen-connect" class="flow-screen">
+    <div class="connect-card">
+      <h2>🔌 Connect Hardware</h2>
+      <p style="color: var(--muted); margin-bottom: 20px;">Pairing with Pressure Padded Sole Hardware (ESP32) via Wi-Fi...</p>
+      <div class="device-card" style="margin-bottom: 20px;">
+        <span class="device-led"></span>
+        <div><b>Pressure Padded Sole Module</b><small>MAC: 24:0AC:32:89:1F</small></div>
+        <strong style="color: var(--green)">Ready</strong>
+      </div>
+      <button onclick="connectAndLaunch()" class="primary-btn">Start Live Telemetry</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: MAIN APP SHELL -->
+  <div id="app-shell" class="flow-screen">
+    <aside class="sidebar">
+      <div class="logo"><span class="logo-orb">🦶</span><span>Pressure<b>Padded Sole</b></span></div>
+      <div class="nav-label">WORKSPACE</div>
+      <nav>
+        <a class="active" href="#dashboard"><i>▦</i> Dashboard</a>
+        <a href="#live"><i>◉</i> Live Pressure</a>
+        <a href="#sensors"><i>⌘</i> Sensor Nodes</a>
+      </nav>
+      <div class="nav-label system-label">SYSTEM</div>
+      <nav>
+        <a href="#"><i>⚙</i> Settings</a>
+      </nav>
+      <div class="device-card">
+        <span class="device-led"></span>
+        <div><b>Sole Hardware Connected</b><small>Pressure Padded Sole v1.0</small></div>
+        <strong>87%</strong>
+      </div>
+    </aside>
+
+    <main id="dashboard">
+      <header>
+        <div>
+          <p class="crumb">PRESSURE PADDED SOLE / LIVE SESSION</p>
+          <h1>Plantar Pressure Map</h1>
+          <small id="patientBanner" style="color: var(--green); font-weight: 600;">Patient: Active</small>
+        </div>
+        <div class="top-metrics">
+          <span><i class="online"></i> LIVE</span>
+          <span>Last updated <b id="clock">10:24:35 AM</b></span>
+          <button id="pauseBtn" class="action-btn">Ⅱ Pause stream</button>
+          <button onclick="completeSession()" class="action-btn primary">Generate PDF Report 📄</button>
+        </div>
+      </header>
+
+      <section class="summary-strip">
+        <div><span>SOLE SENSORS</span><b id="activeSensors">28/32</b><small>connected</small></div>
+        <div><span>BATTERY</span><b>87%</b><small>4h 20m remaining</small></div>
+        <div><span>WIFI</span><b>Strong</b><small>−49 dBm</small></div>
+        <div><span>STEPS</span><b>28 / 60</b><small>session goal</small></div>
+      </section>
+
+      <section class="workspace" id="live">
+        <article class="map-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker"><i class="online"></i> LIVE</p>
+              <h2>Plantar Pressure Layout</h2>
+            </div>
+            <div class="view-controls">
+             <!-- Main index.html me 2D Heatmap button: -->
+<button class="action-btn" onclick="window.open('heatmap-view.html', '_blank', 'width=1100,height=750')">
+  2D Heatmap
+</button>
+            </div>
+          </div>
+
+          <div class="map-stage">
+            <!-- LEFT FOOT -->
+<div class="foot-unit">
+  <label>✓ &nbsp; LEFT FOOT</label>
+  <div id="leftFoot" class="foot-shell left-shell" aria-label="Left sole pressure map">
+    <svg viewBox="0 0 180 360" aria-hidden="true">
+      <!-- Main Outer Sole Outline -->
+      <path class="sole-shape" d="M 90 12 C 142 12 165 70 168 150 C 171 220 162 290 142 340 C 130 352 110 354 90 354 C 70 354 50 352 38 340 C 18 290 9 220 12 150 C 15 70 38 12 90 12 Z" />
+      
+      <!-- Internal Structural Curves -->
+      <path class="sole-line" d="M 20 140 C 60 180 120 150 160 120" />
+      <path class="sole-line" d="M 15 220 C 70 200 110 240 165 260" />
+      <path class="sole-line" d="M 80 165 C 60 250 110 300 135 345" />
+    </svg>
+  </div>
+</div>
+
+<!-- PRESSURE KEY COLOR BAR -->
+<div class="pressure-key">
+  <span>Pressure (kPa)</span>
+  <div></div>
+  <b>420</b>
+  <b>315</b>
+  <b>210</b>
+  <b>105</b>
+  <b>0</b>
+</div>
+
+<!-- RIGHT FOOT -->
+<div class="foot-unit">
+  <label>RIGHT FOOT &nbsp; ↘</label>
+  <div id="rightFoot" class="foot-shell right-shell" aria-label="Right sole pressure map">
+    <svg viewBox="0 0 180 360" aria-hidden="true">
+      <!-- Flipped Mirror Outline for Right Foot -->
+      <path class="sole-shape" d="M 90 12 C 38 12 15 70 12 150 C 9 220 18 290 38 340 C 50 352 70 354 90 354 C 110 354 130 352 142 340 C 162 290 171 220 168 150 C 165 70 142 12 90 12 Z" />
+      
+      <!-- Internal Structural Curves Flipped -->
+      <path class="sole-line" d="M 160 140 C 120 180 60 150 20 120" />
+      <path class="sole-line" d="M 165 220 C 110 200 70 240 15 260" />
+      <path class="sole-line" d="M 100 165 C 120 250 70 300 45 345" />
+    </svg>
+  </div>
+</div>
+          </div>
+
+          <div class="map-footer">
+            <span>32 Calibrated Insole FSR Elements · 100 Hz</span>
+            <span id="selectionText">Selected: L-12 · Heel Centre</span>
+            <span>Unit: kPa</span>
+          </div>
+        </article>
+
+        <!-- RIGHT SIDEBAR DATA PANEL -->
+        <aside class="right-rail">
+          <article class="card foot-data left-data">
+            <div class="card-title"><span>◐ Left Sole Metrics</span><small id="leftState">16 active</small></div>
+            <div class="foot-data-grid">
+              <div><span>Average</span><b id="leftAverage">176.2</b><small>kPa</small></div>
+              <div><span>Maximum</span><b id="leftPeak">308.0</b><small>kPa</small></div>
+              <div><span>Contact</span><b id="leftContact">154</b><small>cm²</small></div>
+            </div>
+          </article>
+          
+          <article class="card foot-data right-data">
+            <div class="card-title"><span>◑ Right Sole Metrics</span><small id="rightState">16 active</small></div>
+            <div class="foot-data-grid">
+              <div><span>Average</span><b id="rightAverage">194.8</b><small>kPa</small></div>
+              <div><span>Maximum</span><b id="rightPeak">356.2</b><small>kPa</small></div>
+              <div><span>Contact</span><b id="rightContact">172</b><small>cm²</small></div>
+            </div>
+          </article>
+
+          <article class="card chart-card">
+            <div class="card-title"><span>⌁ Sole Pressure Stream</span><small>Live Stream ⌄</small></div>
+            <svg id="chart" viewBox="0 0 330 150">
+              <path class="gridlines" d="M28 24H323M28 60H323M28 96H323M28 132H323"/>
+              <path id="chartFill" class="chart-fill" d=""/>
+              <path id="chartPath" class="chart-line" d=""/>
+              <text x="1" y="27">400</text>
+              <text x="4" y="63">300</text>
+              <text x="4" y="99">200</text>
+              <text x="4" y="135">100</text>
+            </svg>
+          </article>
+
+          <!-- DOCTOR NOTES -->
+          <article class="card notes-card">
+            <div class="card-title"><span>📝 Practitioner Observations</span></div>
+            <textarea id="doctorNotes" placeholder="Enter observations, gait analysis, or notes..."></textarea>
+          </article>
+        </aside>
+      </section>
+
+      <section class="sensor-section" id="sensors">
+        <div class="sensor-head">
+          <div>
+            <p class="section-kicker">SENSOR TELEMETRY</p>
+            <h2>Insole Array Sensors</h2>
+          </div>
+          <div class="detail-readout">
+            <span id="selectedName">L-12 · Heel centre</span>
+            <b id="selectedValue">243.0 kPa</b>
+          </div>
+        </div>
+        <div class="sensor-columns">
+          <section><h3>LEFT SOLE · 16 SENSORS</h3><div class="sensor-grid" id="leftSensorGrid"></div></section>
+          <section><h3>RIGHT SOLE · 16 SENSORS</h3><div class="sensor-grid" id="rightSensorGrid"></div></section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
