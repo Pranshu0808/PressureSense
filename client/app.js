@@ -19,7 +19,7 @@ socket.onclose = () => {
 socket.onmessage = (event) => {
 
     const payload = JSON.parse(event.data);
-
+    console.table(payload.pressure_data);
     if (!payload.pressure_data) return;
 
     payload.pressure_data.forEach(sensor => {
