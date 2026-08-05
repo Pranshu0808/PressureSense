@@ -24,9 +24,12 @@ socket.onmessage = (event) => {
 
     payload.pressure_data.forEach(sensor => {
 
-        const side = sensor.side === 0 ? "L" : "R";
+        // const side = sensor.side === 0 ? "L" : "R";
 
-        const id = sensor.sensorId + 1;
+        //const id = sensor.sensorId + 1;
+
+       const side = "L";          // Sab kuch Left foot me bhejo
+const id = sensor.sensorId + 1;
 
         const sensorObj = sensors.find(s =>
             s.side === side &&
