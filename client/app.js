@@ -1,7 +1,7 @@
 /* ===========================
    BACKEND WEBSOCKET CONNECTION
 =========================== */
-
+alert("NEW APP JS LOADED");
 const socket = new WebSocket("wss://pressure-sense-backend.onrender.com");
 
 socket.onopen = () => {
