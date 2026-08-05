@@ -35,10 +35,11 @@ socket.onmessage = (event) => {
 
         if (!sensorObj) return;
 
-        sensorObj.value = Number(((sensor.sensorValue * 50) / 4095).toFixed(1));
-        sensorObj.active = true;
+       const pressure = Number(((sensor.sensorValue * 50) / 4095).toFixed(1));
 
-        sensorObj.values.push(sensor.sensorValue);
+      sensorObj.value = pressure;
+      sensorObj.active = true;
+      sensorObj.values.push(pressure);
 
         if (sensorObj.values.length > 16)
             sensorObj.values.shift();
