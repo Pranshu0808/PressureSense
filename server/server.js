@@ -26,25 +26,48 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
-// Real Hardware ESP32 WebSocket Connection Bridge
-wss.on('connection', (ws) => {
-  console.log('[WebSocket] Hardware Client/ESP32 Connected');
-  
-  ws.on('message', (message) => {
-    try {
-      const data = JSON.parse(message);
-      // Broadcast ESP32 16-Sensor telemetry frame to all dashboard clients
-      wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(data));
-        }
-      });
-    } catch (e) {
-      console.error('[WebSocket Error] Invalid Data');
-    }
-  });
+// POST Endpoint to receive data from ESP32 via HTTP POST
+app.post('/api/data', (req, res) => {
+  try {
+    const payload = req.body;
 
-  ws.on('close', () => console.log('[WebSocket] Client Disconnected'));
+    if (!payload || !payload.pressure_data || !Array.isArray(payload.pressure_data)) {
+      return res.status(400).json({ error: 'Invalid payload format' });
+    }
+
+    // Unpack the 32-bit integers received from ESP32
+    const unpackedData = payload.pressure_data.map(packedValue => {
+      const side = (packedValue >> 16) & 0x03;
+      const sensorId = (packedValue >> 12) & 0x0F;
+      const sensorValue = packedValue & 0x0FFF;
+
+      return { side, sensorId, sensorValue };
+    });
+
+    // 1. Print to console for debugging
+    console.log('[POST /api/data] Unpacked Data Received:', unpackedData);
+
+    // 2. Broadcast the unpacked data to all connected frontend WebSocket clients
+    const broadcastPayload = JSON.stringify({ pressure_data: unpackedData });
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(broadcastPayload);
+      }
+    });
+
+    // Send successful response to ESP32
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('[POST /api/data Error]', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// WebSocket Connection Bridge (for Frontend Clients)
+wss.on('connection', (ws) => {
+  console.log('[WebSocket] Frontend Client Connected');
+
+  ws.on('close', () => console.log('[WebSocket] Frontend Client Disconnected'));
 });
 
 const PORT = process.env.PORT || 5000;
