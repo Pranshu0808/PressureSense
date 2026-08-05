@@ -234,13 +234,13 @@ setInterval(() => {
   if (paused || activeScreen !== 'app-shell') return;
 
   // Random sensor values updates (ESP32 data Simulation)
-  sensors.forEach(s => {
-    if (s.active) {
-      s.value = Math.max(20, Math.min(420, s.value + Math.round((Math.random() - 0.5) * 18)));
-      s.values.push(s.value);
-      if (s.values.length > 16) s.values.shift();
-    }
-  });
+  // sensors.forEach(s => {
+  //   if (s.active) {
+  //     s.value = Math.max(20, Math.min(420, s.value + Math.round((Math.random() - 0.5) * 18)));
+  //     s.values.push(s.value);
+  //     if (s.values.length > 16) s.values.shift();
+  //   }
+  // });
 
   // Graph history update
   const activeSensorsList = sensors.filter(s => s.active);
