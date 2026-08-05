@@ -114,7 +114,12 @@ function makeSensors(side) {
 sensors.push(...makeSensors('L'), ...makeSensors('R'));
 
 function tone(v) {
-  return v < 95 ? '#2867fa' : v < 150 ? '#22bdc6' : v < 210 ? '#40d394' : v < 265 ? '#f1c74a' : v < 315 ? '#e98733' : '#e84b3f';
+  if (v < 8) return '#2867fa';      // Blue
+  if (v < 16) return '#22bdc6';     // Cyan
+  if (v < 24) return '#40d394';     // Green
+  if (v < 32) return '#f1c74a';     // Yellow
+  if (v < 40) return '#e98733';     // Orange
+  return '#e84b3f';                 // Red
 }
 
 function stats(s) {
