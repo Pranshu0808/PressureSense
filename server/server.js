@@ -13,64 +13,115 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// =======================
+// Middleware
+// =======================
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-connectDB();
+// =======================
+// MongoDB Connection
+// =======================
+(async () => {
+  try {
+    console.log("[Server] Connecting to MongoDB...");
+    await connectDB();
+    console.log("[Server] MongoDB Connected Successfully");
+  } catch (err) {
+    console.error("[Server] MongoDB Connection Failed:", err);
+  }
+})();
 
+// =======================
+// Routes
+// =======================
 app.use('/api/patients', patientRoutes);
 app.use('/api/sessions', sessionRoutes);
 
+// =======================
+// Frontend
+// =======================
 app.use(express.static(path.join(__dirname, '../client')));
+
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/index.html'));
+  res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
-// POST Endpoint to receive data from ESP32 via HTTP POST
+// =======================
+// ESP32 HTTP API
+// =======================
 app.post('/api/data', (req, res) => {
   try {
     const payload = req.body;
 
     if (!payload || !payload.pressure_data || !Array.isArray(payload.pressure_data)) {
-      return res.status(400).json({ error: 'Invalid payload format' });
+      return res.status(400).json({
+        error: 'Invalid payload format'
+      });
     }
 
-    // Unpack the 32-bit integers received from ESP32
     const unpackedData = payload.pressure_data.map(packedValue => {
+
       const side = (packedValue >> 16) & 0x03;
       const sensorId = (packedValue >> 12) & 0x0F;
       const sensorValue = packedValue & 0x0FFF;
 
-      return { side, sensorId, sensorValue };
+      return {
+        side,
+        sensorId,
+        sensorValue
+      };
     });
 
-    // 1. Print to console for debugging
-    console.log('[POST /api/data] Unpacked Data Received:', unpackedData);
+    console.log("[ESP32]", unpackedData);
 
-    // 2. Broadcast the unpacked data to all connected frontend WebSocket clients
-    const broadcastPayload = JSON.stringify({ pressure_data: unpackedData });
-    wss.clients.forEach((client) => {
+    const broadcastPayload = JSON.stringify({
+      pressure_data: unpackedData
+    });
+
+    wss.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(broadcastPayload);
       }
     });
 
-    // Send successful response to ESP32
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('[POST /api/data Error]', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(200).json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Internal Server Error"
+    });
   }
 });
 
-// WebSocket Connection Bridge (for Frontend Clients)
-wss.on('connection', (ws) => {
-  console.log('[WebSocket] Frontend Client Connected');
+// =======================
+// WebSocket
+// =======================
+wss.on('connection', ws => {
 
-  ws.on('close', () => console.log('[WebSocket] Frontend Client Disconnected'));
+  console.log("[WebSocket] Client Connected");
+
+  ws.on('close', () => {
+    console.log("[WebSocket] Client Disconnected");
+  });
+
 });
 
+// =======================
+// Start Server
+// =======================
 const PORT = process.env.PORT || 5000;
+
 server.listen(PORT, () => {
-  console.log(`[Pressure Padded Sole] Running on http://localhost:${PORT}`);
+
+  console.log(`======================================`);
+  console.log(`Pressure Padded Sole Backend Running`);
+  console.log(`Port : ${PORT}`);
+  console.log(`======================================`);
+
 });
