@@ -20,35 +20,34 @@ socket.onmessage = (event) => {
 
     const payload = JSON.parse(event.data);
 
-    console.log("📡 Live Data:", payload);
-
     if (!payload.pressure_data) return;
 
-    payload.pressure_data.forEach((sensor) => {
+    payload.pressure_data.forEach(sensor => {
 
         const side = sensor.side === 0 ? "L" : "R";
 
-        const sensorIndex = sensors.findIndex(
-            s => s.side === side && Number(s.id.split("-")[1]) === sensor.sensorId + 1
+        const id = sensor.sensorId + 1;
+
+        const sensorObj = sensors.find(s =>
+            s.side === side &&
+            Number(s.id.split("-")[1]) === id
         );
 
-        if (sensorIndex !== -1) {
+        if (!sensorObj) return;
 
-            sensors[sensorIndex].value = sensor.sensorValue;
-            sensors[sensorIndex].active = true;
+        sensorObj.value = sensor.sensorValue;
+        sensorObj.active = true;
 
-            sensors[sensorIndex].values.push(sensor.sensorValue);
+        sensorObj.values.push(sensor.sensorValue);
 
-            if (sensors[sensorIndex].values.length > 16)
-                sensors[sensorIndex].values.shift();
-        }
+        if (sensorObj.values.length > 16)
+            sensorObj.values.shift();
 
     });
 
     render();
 
 };
-
 
 /* STATE */
 let activeScreen = 'screen-welcome';
