@@ -3,64 +3,200 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Radius Heatmap (-128/unit to Zero)</title>
+  <title>Plantar Pressure Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: #0b0f19;
-      color: #f1f5f9;
+    :root {
+      --bg-main: #070a12;
+      --panel-bg: rgba(18, 26, 43, 0.75);
+      --card-bg: rgba(13, 20, 36, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #00f2fe;
+      --accent-blue: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
       margin: 0;
-      padding: 24px;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden; /* Scroll lock for single-screen view */
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-main);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 40%),
+        radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.08) 0px, transparent 40%);
+      color: var(--text-main);
+    }
+
+    .app-viewport {
+      width: 100vw;
+      height: 100vh;
+      padding: 16px 20px;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      gap: 12px;
     }
-    .container {
-      max-width: 1200px;
-      width: 100%;
-      background-color: #1e293b;
-      padding: 24px;
+
+    /* Top Navigation Header */
+    .header {
+      height: 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
       border-radius: 12px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      flex-shrink: 0;
     }
-    h2 { margin-top: 0; color: #38bdf8; }
-    .grid-display {
+
+    .header-titles h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-badge {
       display: flex;
-      justify-content: space-around;
-      gap: 40px;
-      margin-top: 30px;
-      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      background: rgba(0, 242, 254, 0.08);
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
     }
-    .card {
-      background-color: #0f172a;
-      padding: 24px;
-      border-radius: 8px;
-      text-align: center;
-      border: 1px solid #334155;
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-cyan);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Main Grid Split View */
+    .dashboard-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr; /* Left (Live Heatmap) : Right (3 Cards) */
+      gap: 14px;
+      min-height: 0; /* Prevents overflow pushing vertical size */
+    }
+
+    /* Common Card Styling */
+    .card-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .panel-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title span {
+      font-size: 0.7rem;
+      color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    /* LEFT SIDE: Live Heatmap Section */
+    .heatmap-section {
+      grid-column: 1;
+      height: 100%;
+    }
+
+    .heatmap-container-dual {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+      justify-items: center;
+      min-height: 0;
+    }
+
+    .canvas-card {
+      width: 100%;
+      height: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
     }
+
+    .canvas-card h4 {
+      margin: 0 0 6px 0;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
     .canvas-wrapper {
       position: relative;
-      padding: 0;
-      background-color: #000;
-      border: 1px solid #475569;
-      border-radius: 4px;
+      background-color: #030712;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
       overflow: hidden;
-      width: 300px;
-      height: 700px;
+      aspect-ratio: 130 / 290;
+      height: 82%;
+      max-height: 100%;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
     }
+
     canvas {
-      background-color: #000;
       image-rendering: pixelated;
-      width: 300px;
-      height: 700px;
+      width: 100%;
+      height: 100%;
       display: block;
       position: absolute;
       top: 0;
       left: 0;
     }
+
     .foot-overlay {
       position: absolute;
       top: 0;
@@ -69,220 +205,307 @@
       height: 100%;
       pointer-events: none;
       z-index: 2;
+      filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.5));
     }
-    .info { font-size: 0.85rem; color: #94a3b8; margin-top: 14px; }
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      background-color: #0284c7;
-      color: #fff;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      margin-bottom: 8px;
+
+    /* RIGHT SIDE: Stacked Panels */
+    .right-stack {
+      grid-column: 2;
+      display: grid;
+      grid-template-rows: 1fr 1fr 1fr; /* Exactly 3 stacked equal rows */
+      gap: 12px;
+      height: 100%;
+      min-height: 0;
     }
-    /*  */
-    .region{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin:12px 0;
-}
 
-.region span:first-child{
-    width:80px;
-}
+    /* 1. Region Dominance Bars */
+    .region-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      height: 100%;
+    }
 
-.bar{
-    flex:1;
-    height:12px;
-    background:#243244;
-    border-radius:20px;
-    overflow:hidden;
-}
+    .region {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+    }
 
-.fill{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg,#00b4ff,#00ff88);
-    transition:0.3s;
-}
-    /*  */
-    #clinicalPanel{
-    margin-top:15px;
-}
+    .region span:first-child {
+      width: 65px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
 
-#clinicalPanel p{
-    margin:10px 0;
-    padding:10px 14px;
-    background:#182433;
-    border-left:4px solid #00bfff;
-    border-radius:8px;
-    color:#f1f5f9;
-    font-size:15px;
-    line-height:1.5;
-    transition:0.3s;
-}
+    .region span:last-child {
+      width: 40px;
+      text-align: right;
+      font-weight: 700;
+      color: #38bdf8;
+      font-variant-numeric: tabular-nums;
+    }
 
-#clinicalPanel p:hover{
-    background:#223247;
-    transform:translateX(4px);
-}
+    .bar {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
 
-#obs5{
-    font-weight:700;
-}
-    /*  */
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00f2fe 0%, #38bdf8 100%);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
+    }
+
+    /* 2. Clinical Analysis Panel */
+    #clinicalPanel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      height: 100%;
+      gap: 4px;
+    }
+
+    #clinicalPanel p {
+      margin: 0;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-left: 3px solid var(--accent-cyan);
+      border-radius: 6px;
+      color: #e2e8f0;
+      font-size: 0.75rem;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #obs5 {
+      font-weight: 700;
+    }
+
+    /* 3. Distribution Ring */
+    .ring-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      height: 100%;
+    }
+
+    .ring-graphic {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: conic-gradient(
+        #00f2fe 0% var(--toe-deg, 25%),
+        #38bdf8 var(--toe-deg, 25%) var(--fore-deg, 50%),
+        #818cf8 var(--fore-deg, 50%) var(--mid-deg, 75%),
+        #c084fc var(--mid-deg, 75%) 100%
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .ring-graphic::before {
+      content: '';
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      background-color: #0b1120;
+      border-radius: 50%;
+    }
+
+    .ring-center-text {
+      position: relative;
+      z-index: 2;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .ring-legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      font-size: 0.7rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>Dynamic Radius Heatmap with Foot Boundary</h2>
-  <p>Each circle radius is calculated as Base Value / 128, reaching exactly zero at its perimeter.</p>
+<div class="app-viewport">
+  <!-- Top Header -->
+  <div class="header">
+    <div class="header-titles">
+      <h2>Plantar Pressure Sensing</h2>
+    </div>
+    <div class="status-badge">
+      <div class="pulse-dot"></div>
+      WebSocket Streaming
+    </div>
+  </div>
 
-  <div class="grid-display">
-    <div class="card">
-      <div class="badge">INPUT CANVAS</div>
-      <h3>280 (X) x 120 (Y)</h3>
-      <div class="canvas-wrapper">
-        <canvas id="inputCanvas" width="120" height="280"></canvas>
-        <svg class="foot-overlay" viewBox="0 -15 130 305">
-          <path d="M 60,-12 
-                   C 92,-12 116,8 116,53 
-                   C 116,105 86,145 90,202 
-                   C 94,238 86,283 62,283 
-                   C 33,283 5,253 5,202 
-                   C 4,151 4,100 5,53 
-                   C 6,10 27,-12 60,-12 Z" 
-                fill="none" 
-                stroke="#38bdf8" 
-                stroke-width="2" 
-                stroke-dasharray="4 2" 
-                opacity="0.85"/>
-        </svg>
+  <!-- Dashboard Grid View (100vh Layout) -->
+  <div class="dashboard-grid">
+    
+    <!-- LEFT PANEL: LIVE HEATMAP -->
+    <div class="card-panel heatmap-section">
+      <div class="panel-title">
+        Live Heatmap Display <span>Dynamic Attenuation</span>
       </div>
-      <div class="info">Input Raw Intensities (Dynamic Radii)</div>
-    </div>
+      
+      <div class="heatmap-container-dual">
+        <!-- Input Canvas -->
+        <div class="canvas-card">
+          <h4>RAW INPUT (120x280)</h4>
+          <div class="canvas-wrapper">
+            <canvas id="inputCanvas" width="120" height="280"></canvas>
+            <svg class="foot-overlay" viewBox="0 -15 130 305">
+              <path d="M 60,-12 C 92,-12 116,8 116,53 C 116,105 86,145 90,202 C 94,238 86,283 62,283 C 33,283 5,253 5,202 C 4,151 4,100 5,53 C 6,10 27,-12 60,-12 Z" 
+                    fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 2" opacity="0.85"/>
+            </svg>
+          </div>
+        </div>
 
-    <div class="card">
-      <div class="badge">CONVOLVED RESULT</div>
-      <h3>290 (X) x 130 (Y)</h3>
-      <div class="canvas-wrapper">
-        <canvas id ="outputCanvas" width="130" height="290"></canvas>
-        <svg class="foot-overlay" viewBox="0 -15 130 305">
-          <path d="M 60,-12 
-         C 100,-10 120,-15 116, 65 
-         C 116,105 , 89 ,157 ,98,137 
-         C 94,225 136,283 62,285 
-         C 30,285 10,265 , 9 , 220
-         C 0,1 2,150 3,45
-         C 6,10 25,-12 60,-12 Z"
-                fill="none" 
-                stroke="#38bdf8" 
-                stroke-width="2" 
-                stroke-dasharray="4 2" 
-                opacity="0.85"/>
-        </svg>
+        <!-- Convolved Canvas -->
+        <div class="canvas-card">
+          <h4>CONVOLVED (130x290)</h4>
+          <div class="canvas-wrapper">
+            <canvas id="outputCanvas" width="130" height="290"></canvas>
+            <svg class="foot-overlay" viewBox="0 -15 130 305">
+              <path d="M 60,-12 C 100,-10 120,-15 116, 65 C 116,105 , 89 ,157 ,98,137 C 94,225 136,283 62,285 C 30,285 10,265 , 9 , 220 C 0,1 2,150 3,45 C 6,10 25,-12 60,-12 Z"
+                    fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 2" opacity="0.85"/>
+            </svg>
+          </div>
+        </div>
       </div>
-      <div class="info">10x10 Kernel Convolved Matrix &rightarrow; Color Mapped</div>
-    </div>
-<!--  -->
-    <div class="card">
-    <h3>Region Dominance</h3>
-
-    <div class="region">
-        <span>Toe</span>
-        <div class="bar"><div id="toeBar" class="fill"></div></div>
-        <span id="toePercent">0%</span>
     </div>
 
-    <div class="region">
-        <span>Forefoot</span>
-        <div class="bar"><div id="foreBar" class="fill"></div></div>
-        <span id="forePercent">0%</span>
+    <!-- RIGHT STACK: 3 EQUAL SECTIONS -->
+    <div class="right-stack">
+      
+      <!-- 1. Region Dominance -->
+      <div class="card-panel">
+        <div class="panel-title">
+          Region Dominance <span>Load %</span>
+        </div>
+        <div class="region-container">
+          <div class="region">
+            <span>Toe</span>
+            <div class="bar"><div id="toeBar" class="fill"></div></div>
+            <span id="toePercent">0%</span>
+          </div>
+          <div class="region">
+            <span>Forefoot</span>
+            <div class="bar"><div id="foreBar" class="fill"></div></div>
+            <span id="forePercent">0%</span>
+          </div>
+          <div class="region">
+            <span>Midfoot</span>
+            <div class="bar"><div id="midBar" class="fill"></div></div>
+            <span id="midPercent">0%</span>
+          </div>
+          <div class="region">
+            <span>Heel</span>
+            <div class="bar"><div id="heelBar" class="fill"></div></div>
+            <span id="heelPercent">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Clinical Analysis -->
+      <div class="card-panel">
+        <div class="panel-title">
+          Clinical Analysis <span>Live Diagnostic</span>
+        </div>
+        <div id="clinicalPanel">
+          <p id="obs1">• Waiting for live data stream...</p>
+          <p id="obs2"></p>
+          <p id="obs3"></p>
+          <p id="obs4"></p>
+          <p id="obs5"></p>
+        </div>
+      </div>
+
+      <!-- 3. Distribution Ring -->
+      <div class="card-panel">
+        <div class="panel-title">
+          Distribution Ring <span>Proportions</span>
+        </div>
+        <div class="ring-container">
+          <div class="ring-graphic" id="distributionRing">
+            <div class="ring-center-text">LOAD<br>RATIO</div>
+          </div>
+          <div class="ring-legend">
+            <div class="legend-item"><div class="dot" style="background:#00f2fe;"></div> Toe</div>
+            <div class="legend-item"><div class="dot" style="background:#38bdf8;"></div> Forefoot</div>
+            <div class="legend-item"><div class="dot" style="background:#818cf8;"></div> Midfoot</div>
+            <div class="legend-item"><div class="dot" style="background:#c084fc;"></div> Heel</div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <div class="region">
-        <span>Midfoot</span>
-        <div class="bar"><div id="midBar" class="fill"></div></div>
-        <span id="midPercent">0%</span>
-    </div>
-
-    <div class="region">
-        <span>Heel</span>
-        <div class="bar"><div id="heelBar" class="fill"></div></div>
-        <span id="heelPercent">0%</span>
-    </div>
-
-</div>
-    <!--  -->
-    <div class="card">
-
-    <h3>Clinical Interpretation</h3>
-
-    <div id="clinicalPanel">
-
-        <p id="obs1">Waiting for live data...</p>
-        <p id="obs2"></p>
-        <p id="obs3"></p>
-        <p id="obs4"></p>
-        <p id="obs5"></p>
-
-    </div>
-
-</div>
   </div>
 </div>
 
 <script>
-  // Base 4x4 region intensity values (0 to 4095)
-  // const baseRawValues = [
-  //   2500, 2500, 2600, 2700,  
-  //   2700, 2800, 2900, 2500,  
-  //   1400, 1800, 1800, 2500,  
-  //   2650, 3000, 2700, 3500   
-  // ];
-
-  // // Dynamically generate values with a random variation of +/- 250
-  // const rawValues = baseRawValues.map(val => {
-  //   const delta = (Math.random() * 500) - 250; 
-  //   return Math.max(0, Math.min(4095, Math.round(val + delta)));
-  // });
-  // Live sensor values (ESP32 se aayengi)
   /* ===========================
-   BACKEND WEBSOCKET CONNECTION
-=========================== */
+     WEBSOCKET CONNECTION
+  =========================== */
+  const socket = new WebSocket("wss://pressure-sense-backend.onrender.com");
 
-const socket = new WebSocket("wss://pressure-sense-backend.onrender.com");
-
-socket.onopen = () => {
+  socket.onopen = () => {
     console.log("✅ Heatmap Connected");
-};
+  };
 
-socket.onerror = (err) => {
+  socket.onerror = (err) => {
     console.error("❌ WebSocket Error", err);
-};
+  };
 
-socket.onclose = () => {
+  socket.onclose = () => {
     console.log("⚠️ WebSocket Closed");
-};
-let rawValues = new Array(16).fill(0);
-socket.onmessage = (event) => {
+  };
 
+  let rawValues = new Array(16).fill(0);
+
+  socket.onmessage = (event) => {
     const payload = JSON.parse(event.data);
-
     if (!payload.pressure_data) return;
 
     payload.pressure_data.forEach(sensor => {
-        rawValues[sensor.sensorId] = sensor.sensorValue;
+      rawValues[sensor.sensorId] = sensor.sensorValue;
     });
 
-    console.log(rawValues);
-  requestAnimationFrame(generateHeatmap);
-
-};
-
+    requestAnimationFrame(generateHeatmap);
+  };
 
   // Center Coordinates
   const centers = [
@@ -312,244 +535,199 @@ socket.onmessage = (event) => {
     else                    return [255, 0, 0];
   }
 
-function generateHeatmap() {
+  function generateHeatmap() {
+    const inCanvas = document.getElementById('inputCanvas');
+    const inCtx = inCanvas.getContext('2d');
 
-  const inCanvas = document.getElementById('inputCanvas');
-const inCtx = inCanvas.getContext('2d');
-
-const outCanvas = document.getElementById('outputCanvas');
-const outCtx = outCanvas.getContext('2d');
+    const outCanvas = document.getElementById('outputCanvas');
+    const outCtx = outCanvas.getContext('2d');
 
     const intensityGrid = Array.from({ length: inX }, () => new Float32Array(inY));
     const countGrid = Array.from({ length: inX }, () => new Uint8Array(inY));
     const alphaGrid = Array.from({ length: inX }, () => new Float32Array(inY));
 
-  centers.forEach((c, idx) => {
-    const baseValue = rawValues[idx];
- //    const dynamicRadius = Math.max(6, baseValue / stepDecrement);
-const dynamicRadius = baseValue / stepDecrement;
-    const xMin = Math.max(0, Math.floor(c.x - dynamicRadius));
-    const xMax = Math.min(inX, Math.ceil(c.x + dynamicRadius));
-    const yMin = Math.max(0, Math.floor(c.y - dynamicRadius));
-    const yMax = Math.min(inY, Math.ceil(c.y + dynamicRadius));
+    centers.forEach((c, idx) => {
+      const baseValue = rawValues[idx];
+      const dynamicRadius = baseValue / stepDecrement;
+      const xMin = Math.max(0, Math.floor(c.x - dynamicRadius));
+      const xMax = Math.min(inX, Math.ceil(c.x + dynamicRadius));
+      const yMin = Math.max(0, Math.floor(c.y - dynamicRadius));
+      const yMax = Math.min(inY, Math.ceil(c.y + dynamicRadius));
 
-    for (let x = xMin; x < xMax; x++) {
-      for (let y = yMin; y < yMax; y++) {
-        const dx = x - c.x;
-        const dy = y - c.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+      for (let x = xMin; x < xMax; x++) {
+        for (let y = yMin; y < yMax; y++) {
+          const dx = x - c.x;
+          const dy = y - c.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance <= dynamicRadius) {
-         const currentIntensity = Math.max(0, baseValue - (distance * stepDecrement));
+          if (distance <= dynamicRadius) {
+            const currentIntensity = Math.max(0, baseValue - (distance * stepDecrement));
+            const normDist = distance / dynamicRadius;
+            const alphaFactor = 1 - Math.pow(normDist, 6);
+            const a = Math.round(255 * alphaFactor);
 
-          const normDist = distance / dynamicRadius;
-          const alphaFactor = 1 - Math.pow(normDist, 6);
-        
-          const a = Math.round(255 * alphaFactor);
-
-          intensityGrid[x][y] += currentIntensity;
-          alphaGrid[x][y] = Math.max(alphaGrid[x][y], a);
-          countGrid[x][y] += 1;
-        }
-      }
-    }
-  });
-
-  for (let x = 0; x < inX; x++) {
-    for (let y = 0; y < inY; y++) {
-      if (countGrid[x][y] > 0) {
-        intensityGrid[x][y] /= countGrid[x][y];
-      }
-    }
-  }
-
-  
-  const inImageData = inCtx.createImageData(inY, inX);
-  const inData = inImageData.data;
-
-  for (let x = 0; x < inX; x++) {
-    for (let y = 0; y < inY; y++) {
-      const idx = (x * inY + y) * 4;
-      if (countGrid[x][y] > 0) {
-        const [r, g, b] = valueToRGB(intensityGrid[x][y]);
-        inData[idx]     = r;
-        inData[idx + 1] = g;
-        inData[idx + 2] = b;
-        inData[idx + 3] = alphaGrid[x][y];
-      } else {
-        inData[idx]     = 0;
-        inData[idx + 1] = 0;
-        inData[idx + 2] = 0;
-        inData[idx + 3] = 0;
-      }
-    }
-  }
-  inCtx.putImageData(inImageData, 0, 0);
-
-  const kSize = 10;
-  const pad = 5;
-  const outX = inX + (pad * 2);
-  const outY = inY + (pad * 2);
-
- 
-  const outImageData = outCtx.createImageData(outY, outX);
-  const outData = outImageData.data;
-
-  for (let x = 0; x < outX; x++) {
-    for (let y = 0; y < outY; y++) {
-      let sumVal = 0;
-      let sumA = 0;
-
-      for (let kx = 0; kx < kSize; kx++) {
-        for (let ky = 0; ky < kSize; ky++) {
-          const ix = x - pad + kx;
-          const iy = y - pad + ky;
-
-          if (ix >= 0 && ix < inX && iy >= 0 && iy < inY) {
-            sumVal += intensityGrid[ix][iy];
-            sumA   += alphaGrid[ix][iy];
+            intensityGrid[x][y] += currentIntensity;
+            alphaGrid[x][y] = Math.max(alphaGrid[x][y], a);
+            countGrid[x][y] += 1;
           }
         }
       }
+    });
 
-      const avgVal = sumVal * 0.01;
-      const avgA   = sumA * 0.01;
-
-      const [r, g, b] = valueToRGB(avgVal);
-
-      const outIdx = (x * outY + y) * 4;
-      outData[outIdx]     = r;
-      outData[outIdx + 1] = g;
-      outData[outIdx + 2] = b;
-      outData[outIdx + 3] = avgA;
+    for (let x = 0; x < inX; x++) {
+      for (let y = 0; y < inY; y++) {
+        if (countGrid[x][y] > 0) {
+          intensityGrid[x][y] /= countGrid[x][y];
+        }
+      }
     }
+
+    const inImageData = inCtx.createImageData(inY, inX);
+    const inData = inImageData.data;
+
+    for (let x = 0; x < inX; x++) {
+      for (let y = 0; y < inY; y++) {
+        const idx = (x * inY + y) * 4;
+        if (countGrid[x][y] > 0) {
+          const [r, g, b] = valueToRGB(intensityGrid[x][y]);
+          inData[idx]     = r;
+          inData[idx + 1] = g;
+          inData[idx + 2] = b;
+          inData[idx + 3] = alphaGrid[x][y];
+        } else {
+          inData[idx]     = 0;
+          inData[idx + 1] = 0;
+          inData[idx + 2] = 0;
+          inData[idx + 3] = 0;
+        }
+      }
+    }
+    inCtx.putImageData(inImageData, 0, 0);
+
+    const kSize = 10;
+    const pad = 5;
+    const outX = inX + (pad * 2);
+    const outY = inY + (pad * 2);
+
+    const outImageData = outCtx.createImageData(outY, outX);
+    const outData = outImageData.data;
+
+    for (let x = 0; x < outX; x++) {
+      for (let y = 0; y < outY; y++) {
+        let sumVal = 0;
+        let sumA = 0;
+
+        for (let kx = 0; kx < kSize; kx++) {
+          for (let ky = 0; ky < kSize; ky++) {
+            const ix = x - pad + kx;
+            const iy = y - pad + ky;
+
+            if (ix >= 0 && ix < inX && iy >= 0 && iy < inY) {
+              sumVal += intensityGrid[ix][iy];
+              sumA   += alphaGrid[ix][iy];
+            }
+          }
+        }
+
+        const avgVal = sumVal * 0.01;
+        const avgA   = sumA * 0.01;
+
+        const [r, g, b] = valueToRGB(avgVal);
+
+        const outIdx = (x * outY + y) * 4;
+        outData[outIdx]     = r;
+        outData[outIdx + 1] = g;
+        outData[outIdx + 2] = b;
+        outData[outIdx + 3] = avgA;
+      }
+    }
+
+    outCtx.putImageData(outImageData, 0, 0);
+    updateRegionDominance();
+    updateClinicalInterpretation();
   }
 
-  outCtx.putImageData(outImageData, 0, 0);
-  updateRegionDominance();
-  updateClinicalInterpretation();
-}
   generateHeatmap();
+
   function updateRegionDominance() {
-
-    const toe =
-        rawValues[0] + rawValues[1] +
-        rawValues[2] + rawValues[3];
-
-    const fore =
-        rawValues[4] + rawValues[5] +
-        rawValues[6] + rawValues[7];
-
-    const mid =
-        rawValues[8] + rawValues[9] +
-        rawValues[10] + rawValues[11];
-
-    const heel =
-        rawValues[12] + rawValues[13] +
-        rawValues[14] + rawValues[15];
+    const toe = rawValues[0] + rawValues[1] + rawValues[2] + rawValues[3];
+    const fore = rawValues[4] + rawValues[5] + rawValues[6] + rawValues[7];
+    const mid = rawValues[8] + rawValues[9] + rawValues[10] + rawValues[11];
+    const heel = rawValues[12] + rawValues[13] + rawValues[14] + rawValues[15];
 
     const total = toe + fore + mid + heel;
-
     if (total === 0) return;
 
-    const toeP = (toe * 100 / total).toFixed(1);
-    const foreP = (fore * 100 / total).toFixed(1);
-    const midP = (mid * 100 / total).toFixed(1);
-    const heelP = (heel * 100 / total).toFixed(1);
+    const toeP = parseFloat((toe * 100 / total).toFixed(1));
+    const foreP = parseFloat((fore * 100 / total).toFixed(1));
+    const midP = parseFloat((mid * 100 / total).toFixed(1));
+    const heelP = parseFloat((heel * 100 / total).toFixed(1));
 
-    document.getElementById("toePercent").innerHTML = toeP + "%";
-    document.getElementById("forePercent").innerHTML = foreP + "%";
-    document.getElementById("midPercent").innerHTML = midP + "%";
-    document.getElementById("heelPercent").innerHTML = heelP + "%";
+    document.getElementById("toePercent").innerText = toeP + "%";
+    document.getElementById("forePercent").innerText = foreP + "%";
+    document.getElementById("midPercent").innerText = midP + "%";
+    document.getElementById("heelPercent").innerText = heelP + "%";
 
     document.getElementById("toeBar").style.width = toeP + "%";
     document.getElementById("foreBar").style.width = foreP + "%";
     document.getElementById("midBar").style.width = midP + "%";
     document.getElementById("heelBar").style.width = heelP + "%";
-}
+
+    // Update Conic Gradient for Distribution Ring
+    const ring = document.getElementById("distributionRing");
+    const d1 = toeP;
+    const d2 = d1 + foreP;
+    const d3 = d2 + midP;
+    ring.style.setProperty('--toe-deg', `${d1}%`);
+    ring.style.setProperty('--fore-deg', `${d2}%`);
+    ring.style.setProperty('--mid-deg', `${d3}%`);
+  }
+
   function updateClinicalInterpretation() {
-
-    const toe =
-        rawValues[0] +
-        rawValues[1] +
-        rawValues[2] +
-        rawValues[3];
-
-    const fore =
-        rawValues[4] +
-        rawValues[5] +
-        rawValues[6] +
-        rawValues[7];
-
-    const mid =
-        rawValues[8] +
-        rawValues[9] +
-        rawValues[10] +
-        rawValues[11];
-
-    const heel =
-        rawValues[12] +
-        rawValues[13] +
-        rawValues[14] +
-        rawValues[15];
+    const toe = rawValues[0] + rawValues[1] + rawValues[2] + rawValues[3];
+    const fore = rawValues[4] + rawValues[5] + rawValues[6] + rawValues[7];
+    const mid = rawValues[8] + rawValues[9] + rawValues[10] + rawValues[11];
+    const heel = rawValues[12] + rawValues[13] + rawValues[14] + rawValues[15];
 
     const total = toe + fore + mid + heel;
+    if(total == 0) return;
 
-    if(total==0) return;
+    const toeP = (toe * 100 / total);
+    const foreP = (fore * 100 / total);
+    const midP = (mid * 100 / total);
+    const heelP = (heel * 100 / total);
 
-    const toeP=(toe*100/total);
-    const foreP=(fore*100/total);
-    const midP=(mid*100/total);
-    const heelP=(heel*100/total);
+    const peak = Math.max(...rawValues);
 
-    const peak=Math.max(...rawValues);
+    let region = "Toe";
+    if(fore >= toe && fore >= mid && fore >= heel) region = "Forefoot";
+    if(mid >= toe && mid >= fore && mid >= heel) region = "Midfoot";
+    if(heel >= toe && heel >= fore && heel >= mid) region = "Heel";
 
-    let region="Toe";
+    document.getElementById("obs1").innerHTML = "• Peak load in <b>" + region + "</b>.";
 
-    if(fore>=toe && fore>=mid && fore>=heel)
-        region="Forefoot";
-
-    if(mid>=toe && mid>=fore && mid>=heel)
-        region="Midfoot";
-
-    if(heel>=toe && heel>=fore && heel>=mid)
-        region="Heel";
-
-    document.getElementById("obs1").innerHTML=
-    "• Peak loading detected in <b>"+region+"</b>.";
-
-    if(foreP>40)
-        document.getElementById("obs2").innerHTML=
-        "• High forefoot loading observed.";
+    if(foreP > 40)
+      document.getElementById("obs2").innerHTML = "• High forefoot loading detected.";
     else
-        document.getElementById("obs2").innerHTML=
-        "• Forefoot loading within normal range.";
+      document.getElementById("obs2").innerHTML = "• Forefoot load in normal range.";
 
-    if(heelP>40)
-        document.getElementById("obs3").innerHTML=
-        "• Increased heel pressure detected.";
+    if(heelP > 40)
+      document.getElementById("obs3").innerHTML = "• Increased heel pressure detected.";
     else
-        document.getElementById("obs3").innerHTML=
-        "• Heel pressure appears balanced.";
+      document.getElementById("obs3").innerHTML = "• Heel pressure is balanced.";
 
-    if(toeP<10)
-        document.getElementById("obs4").innerHTML=
-        "• Reduced toe engagement observed.";
+    if(toeP < 10)
+      document.getElementById("obs4").innerHTML = "• Low toe engagement observed.";
     else
-        document.getElementById("obs4").innerHTML=
-        "• Toe engagement is adequate.";
+      document.getElementById("obs4").innerHTML = "• Toe engagement is normal.";
 
-    if(peak>3600)
-        document.getElementById("obs5").innerHTML=
-        "<span style='color:#ff5555'>● High pressure hotspot detected.</span>";
-    else if(peak>2500)
-        document.getElementById("obs5").innerHTML=
-        "<span style='color:#ffcc00'>● Moderate plantar pressure.</span>";
+    if(peak > 3600)
+      document.getElementById("obs5").innerHTML = "<span style='color:#ef4444'>● Critical High Pressure Hotspot</span>";
+    else if(peak > 2500)
+      document.getElementById("obs5").innerHTML = "<span style='color:#f59e0b'>● Moderate Plantar Pressure</span>";
     else
-        document.getElementById("obs5").innerHTML=
-        "<span style='color:#66ff99'>● Pressure distribution appears balanced.</span>";
-
-}
+      document.getElementById("obs5").innerHTML = "<span style='color:#10b981'>● Normal Balanced Distribution</span>";
+  }
 </script>
 
 </body>
