@@ -182,7 +182,7 @@ socket.onmessage = (event) => {
     });
 
     console.log(rawValues);
-  requestAnimationFrame(generateHeatmap);
+  generateHeatmap();
 
 };
 
@@ -229,7 +229,7 @@ const outCtx = outCanvas.getContext('2d');
 
   centers.forEach((c, idx) => {
     const baseValue = rawValues[idx];
-    const dynamicRadius = baseValue / stepDecrement;
+     const dynamicRadius = Math.max(6, baseValue / stepDecrement);
 
     const xMin = Math.max(0, Math.floor(c.x - dynamicRadius));
     const xMax = Math.min(inX, Math.ceil(c.x + dynamicRadius));
@@ -243,9 +243,13 @@ const outCtx = outCanvas.getContext('2d');
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance <= dynamicRadius) {
-          const currentIntensity = Math.max(0, baseValue - (distance * stepDecrement));
+        //  const currentIntensity = Math.max(0, baseValue - (distance * stepDecrement));
+          const currentIntensity = baseValue * (1 - (distance / dynamicRadius));
+
+if (currentIntensity <= 0) continue;
           const normDist = distance / dynamicRadius;
-          const alphaFactor = 1 - Math.pow(normDist, 6);
+       //   const alphaFactor = 1 - Math.pow(normDist, 6);
+          const alphaFactor = Math.pow(1 - normDist, 2);
           const a = Math.round(255 * alphaFactor);
 
           intensityGrid[x][y] += currentIntensity;
