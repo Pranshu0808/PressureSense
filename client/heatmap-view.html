@@ -386,8 +386,46 @@ const dynamicRadius = baseValue / stepDecrement;
   }
 
   outCtx.putImageData(outImageData, 0, 0);
+  updateRegionDominance();
 }
   generateHeatmap();
+  function updateRegionDominance() {
+
+    const toe =
+        rawValues[0] + rawValues[1] +
+        rawValues[2] + rawValues[3];
+
+    const fore =
+        rawValues[4] + rawValues[5] +
+        rawValues[6] + rawValues[7];
+
+    const mid =
+        rawValues[8] + rawValues[9] +
+        rawValues[10] + rawValues[11];
+
+    const heel =
+        rawValues[12] + rawValues[13] +
+        rawValues[14] + rawValues[15];
+
+    const total = toe + fore + mid + heel;
+
+    if (total === 0) return;
+
+    const toeP = (toe * 100 / total).toFixed(1);
+    const foreP = (fore * 100 / total).toFixed(1);
+    const midP = (mid * 100 / total).toFixed(1);
+    const heelP = (heel * 100 / total).toFixed(1);
+
+    document.getElementById("toePercent").innerHTML = toeP + "%";
+    document.getElementById("forePercent").innerHTML = foreP + "%";
+    document.getElementById("midPercent").innerHTML = midP + "%";
+    document.getElementById("heelPercent").innerHTML = heelP + "%";
+
+    document.getElementById("toeBar").style.width = toeP + "%";
+    document.getElementById("foreBar").style.width = foreP + "%";
+    document.getElementById("midBar").style.width = midP + "%";
+    document.getElementById("heelBar").style.width = heelP + "%";
+}
 </script>
 
 </body>
