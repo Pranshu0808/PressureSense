@@ -292,8 +292,7 @@
 </body>
 </html> -->
 
-
-      <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -479,7 +478,7 @@
     <!-- INPUT CANVAS CARD -->
     <div class="card">
       <div class="badge">INPUT CANVAS</div>
-      <h3>280 (X) x 120 (Y)</h3>
+      <h3>120 (X) x 280 (Y)</h3>
       <div class="canvas-wrapper">
         <canvas id="inputCanvas" width="120" height="280"></canvas>
         <svg class="foot-overlay" viewBox="0 -15 130 305">
@@ -503,7 +502,7 @@
     <!-- CONVOLVED RESULT CARD -->
     <div class="card">
       <div class="badge">CONVOLVED RESULT</div>
-      <h3>290 (X) x 130 (Y)</h3>
+      <h3>130 (X) x 290 (Y)</h3>
       <div class="canvas-wrapper">
         <canvas id="outputCanvas" width="130" height="290"></canvas>
         <svg class="foot-overlay" viewBox="0 -15 130 305">
@@ -534,22 +533,21 @@
   // -------------------------------------------------------------------
   // 1. CONSTANTS & GRID SETUP
   // -------------------------------------------------------------------
-  const inX = 280;
-  const inY = 120;
+  const inY = 280;
+  const inX = 120;
   const stepDecrement = 128;
 
-  // 16-Sensor Node Coordinates on the 280x120 Canvas
+  // Sensor node coordinates aligned to 120 (Width) x 280 (Height)
   const centers = [
-    { x: 20,  y: 95  }, { x: 10,  y: 75  }, { x: 20,  y: 45  }, { x: 40,  y: 25  },
-    { x: 75,  y: 95  }, { x: 70,  y: 60  }, { x: 80,  y: 25  }, { x: 120, y: 30  },
-    { x: 125, y: 80  }, { x: 150, y: 57  }, { x: 170, y: 80  }, { x: 180, y: 40  },
-    { x: 220, y: 70  }, { x: 230, y: 30  }, { x: 250, y: 85  }, { x: 270, y: 60  }
+    { y: 95,  x: 20  }, { y: 75,  x: 10  }, { y: 45,  x: 20  }, { y: 25,  x: 40  },
+    { y: 95,  x: 75  }, { y: 60,  x: 70  }, { y: 25,  x: 80  }, { y: 30,  x: 110 },
+    { y: 80,  x: 110 }, { y: 57,  x: 100 }, { y: 80,  x: 90  }, { y: 40,  x: 90  },
+    { y: 70,  x: 60  }, { y: 30,  x: 50  }, { y: 85,  x: 50  }, { y: 60,  x: 40  }
   ];
 
-  // 16 Live ESP32 Sensor Raw Values Buffer
-  let rawValues = new Array(16).fill(0);
+  // Default initial values so canvas displays heatmap immediately
+  let rawValues = [2500, 2500, 2600, 2700, 2700, 2800, 2900, 2500, 1400, 1800, 1800, 2500, 2650, 3000, 2700, 3500];
 
-  // Exact Color Map Logic
   function valueToRGB(val) {
     const norm = Math.max(0, Math.min(4095, val)) / 4095;
 
@@ -567,29 +565,28 @@
   }
 
   // -------------------------------------------------------------------
-  // 2. CORE CANVAS RENDERER & CONVOLUTION ALGORITHM
+  // 2. CORE HEATMAP ENGINE
   // -------------------------------------------------------------------
   function renderHeatmaps() {
-    const intensityGrid = Array.from({ length: inX }, () => new Float32Array(inY));
-    const countGrid     = Array.from({ length: inX }, () => new Uint8Array(inY));
-    const alphaGrid     = Array.from({ length: inX }, () => new Float32Array(inY));
+    const intensityGrid = Array.from({ length: inY }, () => new Float32Array(inX));
+    const countGrid     = Array.from({ length: inY }, () => new Uint8Array(inX));
+    const alphaGrid     = Array.from({ length: inY }, () => new Float32Array(inX));
 
-    // Dynamic Radius Calculation for each sensor
     centers.forEach((c, idx) => {
       const baseValue = rawValues[idx];
-      if (baseValue <= 0) return;
+      if (!baseValue || baseValue <= 0) return;
 
       const dynamicRadius = baseValue / stepDecrement;
 
-      const xMin = Math.max(0, Math.floor(c.x - dynamicRadius));
-      const xMax = Math.min(inX, Math.ceil(c.x + dynamicRadius));
       const yMin = Math.max(0, Math.floor(c.y - dynamicRadius));
       const yMax = Math.min(inY, Math.ceil(c.y + dynamicRadius));
+      const xMin = Math.max(0, Math.floor(c.x - dynamicRadius));
+      const xMax = Math.min(inX, Math.ceil(c.x + dynamicRadius));
 
-      for (let x = xMin; x < xMax; x++) {
-        for (let y = yMin; y < yMax; y++) {
-          const dx = x - c.x;
+      for (let y = yMin; y < yMax; y++) {
+        for (let x = xMin; x < xMax; x++) {
           const dy = y - c.y;
+          const dx = x - c.x;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance <= dynamicRadius) {
@@ -598,37 +595,37 @@
             const alphaFactor = 1 - Math.pow(normDist, 6);
             const a = Math.round(255 * alphaFactor);
 
-            intensityGrid[x][y] += currentIntensity;
-            alphaGrid[x][y] = Math.max(alphaGrid[x][y], a);
-            countGrid[x][y] += 1;
+            intensityGrid[y][x] += currentIntensity;
+            alphaGrid[y][x] = Math.max(alphaGrid[y][x], a);
+            countGrid[y][x] += 1;
           }
         }
       }
     });
 
-    for (let x = 0; x < inX; x++) {
-      for (let y = 0; y < inY; y++) {
-        if (countGrid[x][y] > 0) {
-          intensityGrid[x][y] /= countGrid[x][y];
+    for (let y = 0; y < inY; y++) {
+      for (let x = 0; x < inX; x++) {
+        if (countGrid[y][x] > 0) {
+          intensityGrid[y][x] /= countGrid[y][x];
         }
       }
     }
 
-    // Render Raw Input Canvas
+    // Input Canvas Rendering (120 x 280)
     const inCanvas = document.getElementById('inputCanvas');
     const inCtx = inCanvas.getContext('2d');
-    const inImageData = inCtx.createImageData(inY, inX);
+    const inImageData = inCtx.createImageData(inX, inY);
     const inData = inImageData.data;
 
-    for (let x = 0; x < inX; x++) {
-      for (let y = 0; y < inY; y++) {
-        const idx = (x * inY + y) * 4;
-        if (countGrid[x][y] > 0) {
-          const [r, g, b] = valueToRGB(intensityGrid[x][y]);
+    for (let y = 0; y < inY; y++) {
+      for (let x = 0; x < inX; x++) {
+        const idx = (y * inX + x) * 4;
+        if (countGrid[y][x] > 0) {
+          const [r, g, b] = valueToRGB(intensityGrid[y][x]);
           inData[idx]     = r;
           inData[idx + 1] = g;
           inData[idx + 2] = b;
-          inData[idx + 3] = alphaGrid[x][y];
+          inData[idx + 3] = alphaGrid[y][x];
         } else {
           inData[idx]     = 0;
           inData[idx + 1] = 0;
@@ -639,40 +636,39 @@
     }
     inCtx.putImageData(inImageData, 0, 0);
 
-    // Render 10x10 Convolved Matrix Output Canvas
+    // Convolved Canvas Rendering (130 x 290)
     const kSize = 10;
     const pad = 5;
-    const outX = inX + (pad * 2);
     const outY = inY + (pad * 2);
+    const outX = inX + (pad * 2);
 
     const outCanvas = document.getElementById('outputCanvas');
     const outCtx = outCanvas.getContext('2d');
-    const outImageData = outCtx.createImageData(outY, outX);
+    const outImageData = outCtx.createImageData(outX, outY);
     const outData = outImageData.data;
 
-    for (let x = 0; x < outX; x++) {
-      for (let y = 0; y < outY; y++) {
+    for (let y = 0; y < outY; y++) {
+      for (let x = 0; x < outX; x++) {
         let sumVal = 0;
         let sumA   = 0;
 
-        for (let kx = 0; kx < kSize; kx++) {
-          for (let ky = 0; ky < kSize; ky++) {
-            const ix = x - pad + kx;
+        for (let ky = 0; ky < kSize; ky++) {
+          for (let kx = 0; kx < kSize; kx++) {
             const iy = y - pad + ky;
+            const ix = x - pad + kx;
 
-            if (ix >= 0 && ix < inX && iy >= 0 && iy < inY) {
-              sumVal += intensityGrid[ix][iy];
-              sumA   += alphaGrid[ix][iy];
+            if (iy >= 0 && iy < inY && ix >= 0 && ix < inX) {
+              sumVal += intensityGrid[iy][ix];
+              sumA   += alphaGrid[iy][ix];
             }
           }
         }
 
         const avgVal = sumVal * 0.01;
         const avgA   = sumA * 0.01;
-
         const [r, g, b] = valueToRGB(avgVal);
 
-        const outIdx = (x * outY + y) * 4;
+        const outIdx = (y * outX + x) * 4;
         outData[outIdx]     = r;
         outData[outIdx + 1] = g;
         outData[outIdx + 2] = b;
@@ -683,11 +679,11 @@
     outCtx.putImageData(outImageData, 0, 0);
   }
 
-  // Initial Empty Render
+  // Render baseline immediately
   renderHeatmaps();
 
   // -------------------------------------------------------------------
-  // 3. RENDER BACKEND WEBSOCKET & 32-BIT UNPACKING LOGIC
+  // 3. LIVE WEBSOCKET SYNC
   // -------------------------------------------------------------------
   const WS_URL = "wss://pressure-sense-backend.onrender.com";
   let socket;
@@ -715,7 +711,6 @@
         const data = JSON.parse(event.data);
         if (data.pressure_data && Array.isArray(data.pressure_data)) {
           
-          // ESP32 Packed Arrays se values extraction
           data.pressure_data.forEach(packedVal => {
             const decoded = unpackSensorData(packedVal);
             if (decoded.id >= 0 && decoded.id < 16) {
@@ -723,9 +718,7 @@
             }
           });
 
-          // Heatmap Redraw
           renderHeatmaps();
-
           packetStatus.textContent = `[PACKET 4444 SYNC] Received ${data.pressure_data.length} frames | Updated: ${new Date().toLocaleTimeString()}`;
         }
       } catch (err) {
@@ -739,12 +732,9 @@
       setTimeout(connectWebSocket, 2000);
     };
 
-    socket.onerror = (err) => {
-      socket.close();
-    };
+    socket.onerror = () => socket.close();
   }
 
-  // Connect on load
   connectWebSocket();
 </script>
 
