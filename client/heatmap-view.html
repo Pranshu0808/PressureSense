@@ -28,7 +28,7 @@
       padding: 0;
       width: 100vw;
       height: 100vh;
-      overflow: hidden; /* Scroll lock for single-screen view */
+      overflow: hidden;
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       background-color: var(--bg-main);
       background-image: 
@@ -97,13 +97,13 @@
       100% { opacity: 1; transform: scale(1); }
     }
 
-    /* Main Grid Split View */
+    /* Main Grid Split View - Increased Heatmap Ratio */
     .dashboard-grid {
       flex: 1;
       display: grid;
-      grid-template-columns: 1.2fr 1fr; /* Left (Live Heatmap) : Right (3 Cards) */
+      grid-template-columns: 2fr 0.9fr; /* Expanded Left Heatmap, Compressed Right Stack */
       gap: 14px;
-      min-height: 0; /* Prevents overflow pushing vertical size */
+      min-height: 0;
     }
 
     /* Common Card Styling */
@@ -150,10 +150,11 @@
       flex: 1;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 16px;
       align-items: center;
       justify-items: center;
       min-height: 0;
+      height: 100%;
     }
 
     .canvas-card {
@@ -162,7 +163,7 @@
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 12px;
-      padding: 10px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -170,7 +171,7 @@
     }
 
     .canvas-card h4 {
-      margin: 0 0 6px 0;
+      margin: 0 0 8px 0;
       font-size: 0.75rem;
       color: var(--text-muted);
     }
@@ -179,12 +180,12 @@
       position: relative;
       background-color: #030712;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
+      border-radius: 10px;
       overflow: hidden;
       aspect-ratio: 130 / 290;
-      height: 82%;
+      height: 88%;
       max-height: 100%;
-      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
     }
 
     canvas {
@@ -208,11 +209,11 @@
       filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.5));
     }
 
-    /* RIGHT SIDE: Stacked Panels */
+    /* RIGHT SIDE: Compact Stacked Panels */
     .right-stack {
       grid-column: 2;
       display: grid;
-      grid-template-rows: 1fr 1fr 1fr; /* Exactly 3 stacked equal rows */
+      grid-template-rows: 1fr 1fr 1fr;
       gap: 12px;
       height: 100%;
       min-height: 0;
@@ -229,18 +230,18 @@
     .region {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 0.78rem;
+      gap: 8px;
+      font-size: 0.75rem;
     }
 
     .region span:first-child {
-      width: 65px;
+      width: 55px;
       font-weight: 600;
       color: var(--text-muted);
     }
 
     .region span:last-child {
-      width: 40px;
+      width: 38px;
       text-align: right;
       font-weight: 700;
       color: #38bdf8;
@@ -276,14 +277,14 @@
 
     #clinicalPanel p {
       margin: 0;
-      padding: 6px 10px;
+      padding: 5px 8px;
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid rgba(255, 255, 255, 0.04);
       border-left: 3px solid var(--accent-cyan);
       border-radius: 6px;
       color: #e2e8f0;
-      font-size: 0.75rem;
-      line-height: 1.25;
+      font-size: 0.72rem;
+      line-height: 1.2;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -297,14 +298,15 @@
     .ring-container {
       display: flex;
       align-items: center;
-      justify-content: space-around;
+      justify-content: space-between;
       height: 100%;
+      padding: 0 4px;
     }
 
     .ring-graphic {
       position: relative;
-      width: 80px;
-      height: 80px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: conic-gradient(
         #00f2fe 0% var(--toe-deg, 25%),
@@ -316,13 +318,14 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
     }
 
     .ring-graphic::before {
       content: '';
       position: absolute;
-      width: 54px;
-      height: 54px;
+      width: 46px;
+      height: 46px;
       background-color: #0b1120;
       border-radius: 50%;
     }
@@ -330,17 +333,18 @@
     .ring-center-text {
       position: relative;
       z-index: 2;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       font-weight: 700;
       color: var(--text-muted);
       text-align: center;
+      line-height: 1.1;
     }
 
     .ring-legend {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 12px;
-      font-size: 0.7rem;
+      grid-template-columns: 1fr;
+      gap: 4px;
+      font-size: 0.68rem;
     }
 
     .legend-item {
@@ -351,8 +355,8 @@
     }
 
     .dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
     }
   </style>
@@ -371,17 +375,17 @@
     </div>
   </div>
 
-  <!-- Dashboard Grid View (100vh Layout) -->
+  <!-- Dashboard Grid View -->
   <div class="dashboard-grid">
     
-    <!-- LEFT PANEL: LIVE HEATMAP -->
+    <!-- LEFT PANEL: EXPANDED HEATMAP AREA -->
     <div class="card-panel heatmap-section">
       <div class="panel-title">
         Live Heatmap Display <span>Dynamic Attenuation</span>
       </div>
       
       <div class="heatmap-container-dual">
-        <!-- Input Canvas -->
+        <!-- Raw Canvas -->
         <div class="canvas-card">
           <h4>RAW INPUT (120x280)</h4>
           <div class="canvas-wrapper">
@@ -407,7 +411,7 @@
       </div>
     </div>
 
-    <!-- RIGHT STACK: 3 EQUAL SECTIONS -->
+    <!-- RIGHT STACK: COMPACT RIGHT SIDE -->
     <div class="right-stack">
       
       <!-- 1. Region Dominance -->
@@ -456,7 +460,7 @@
       <!-- 3. Distribution Ring -->
       <div class="card-panel">
         <div class="panel-title">
-          Distribution Ring <span>Proportions</span>
+          Distribution Ring <span>Ratio</span>
         </div>
         <div class="ring-container">
           <div class="ring-graphic" id="distributionRing">
@@ -477,9 +481,7 @@
 </div>
 
 <script>
-  /* ===========================
-     WEBSOCKET CONNECTION
-  =========================== */
+  /* WebSocket Connection */
   const socket = new WebSocket("wss://pressure-sense-backend.onrender.com");
 
   socket.onopen = () => {
@@ -673,7 +675,6 @@
     document.getElementById("midBar").style.width = midP + "%";
     document.getElementById("heelBar").style.width = heelP + "%";
 
-    // Update Conic Gradient for Distribution Ring
     const ring = document.getElementById("distributionRing");
     const d1 = toeP;
     const d2 = d1 + foreP;
