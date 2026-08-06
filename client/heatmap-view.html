@@ -170,7 +170,7 @@ socket.onerror = (err) => {
 socket.onclose = () => {
     console.log("⚠️ WebSocket Closed");
 };
-
+let rawValues = new Array(16).fill(0);
 socket.onmessage = (event) => {
 
     const payload = JSON.parse(event.data);
@@ -182,10 +182,10 @@ socket.onmessage = (event) => {
     });
 
     console.log(rawValues);
-  generateHeatmap();
+  requestAnimationFrame(generateHeatmap);
 
 };
-let rawValues = new Array(16).fill(0);
+
 
   // Center Coordinates
   const centers = [
@@ -216,6 +216,9 @@ let rawValues = new Array(16).fill(0);
   }
 
 function generateHeatmap() {
+
+    inCtx.clearRect(0, 0, inCanvas.width, inCanvas.height);
+outCtx.clearRect(0, 0, outCanvas.width, outCanvas.height);
 
     const intensityGrid = Array.from({ length: inX }, () => new Float32Array(inY));
     const countGrid = Array.from({ length: inX }, () => new Uint8Array(inY));
