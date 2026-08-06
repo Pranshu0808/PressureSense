@@ -217,8 +217,11 @@ socket.onmessage = (event) => {
 
 function generateHeatmap() {
 
-    inCtx.clearRect(0, 0, inCanvas.width, inCanvas.height);
-outCtx.clearRect(0, 0, outCanvas.width, outCanvas.height);
+  const inCanvas = document.getElementById('inputCanvas');
+const inCtx = inCanvas.getContext('2d');
+
+const outCanvas = document.getElementById('outputCanvas');
+const outCtx = outCanvas.getContext('2d');
 
     const intensityGrid = Array.from({ length: inX }, () => new Float32Array(inY));
     const countGrid = Array.from({ length: inX }, () => new Uint8Array(inY));
@@ -261,8 +264,7 @@ outCtx.clearRect(0, 0, outCanvas.width, outCanvas.height);
     }
   }
 
-  const inCanvas = document.getElementById('inputCanvas');
-  const inCtx = inCanvas.getContext('2d');
+  
   const inImageData = inCtx.createImageData(inY, inX);
   const inData = inImageData.data;
 
@@ -290,8 +292,7 @@ outCtx.clearRect(0, 0, outCanvas.width, outCanvas.height);
   const outX = inX + (pad * 2);
   const outY = inY + (pad * 2);
 
-  const outCanvas = document.getElementById('outputCanvas');
-  const outCtx = outCanvas.getContext('2d');
+ 
   const outImageData = outCtx.createImageData(outY, outX);
   const outData = outImageData.data;
 
