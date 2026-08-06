@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -289,5 +289,308 @@
   outCtx.putImageData(outImageData, 0, 0);
 </script>
 
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pressure Sense | Real-time Visualizer</title>
+    <!-- Chart.js for trends -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --panel-bg: #121824;
+            --accent-cyan: #06b6d4;
+            --accent-rose: #f43f5e;
+            --border-line: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            padding: 20px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            background: var(--panel-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-line);
+            margin-bottom: 20px;
+        }
+
+        .nav-link {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ef4444;
+        }
+
+        .status-pill.online .dot {
+            background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media(max-width: 900px) {
+            .grid-layout { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-line);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Pressure Heatmap Layout */
+        .heatmap-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .sensor-node {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-line);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            transition: background-color 0.15s ease;
+        }
+
+        .sensor-node .id-tag {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .sensor-node .val-tag {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .packet-info {
+            font-family: monospace;
+            background: #05070c;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div>
+            <a href="index.html" class="nav-link">← Back to Main Dashboard</a>
+        </div>
+        <div>
+            <h2>ESP32 Sensor Live Telemetry</h2>
+        </div>
+        <div class="status-pill" id="wsStatus">
+            <span class="dot"></span>
+            <span id="statusText">Connecting...</span>
+        </div>
+    </nav>
+
+    <div class="grid-layout">
+        <!-- Live Heatmap & Raw Matrix -->
+        <div class="panel">
+            <div class="panel-title">16-Channel Live Pressure Grid</div>
+            <div class="heatmap-container" id="heatmapGrid"></div>
+            
+            <div style="margin-top: 20px;">
+                <div class="panel-title">Packet Monitor (Protocol 4444)</div>
+                <div class="packet-info" id="packetBuffer">Waiting for data payload...</div>
+            </div>
+        </div>
+
+        <!-- Realtime Analytics Chart -->
+        <div class="panel">
+            <div class="panel-title">Pressure Distribution (Left vs Right)</div>
+            <div style="height: 320px;">
+                <canvas id="liveTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // -------------------------------------------------------------
+        // 1. WEBSOCKET CLIENT CONNECTING TO RENDER BACKEND
+        // -------------------------------------------------------------
+        const WS_URL = "wss://pressure-sense-backend.onrender.com";
+        let ws;
+
+        const wsStatus = document.getElementById('wsStatus');
+        const statusText = document.getElementById('statusText');
+        const packetBuffer = document.getElementById('packetBuffer');
+
+        function initWS() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                wsStatus.classList.add('online');
+                statusText.textContent = 'Live ESP32 Stream Active';
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const parsed = JSON.parse(event.data);
+                    
+                    if (parsed.pressure_data) {
+                        updateDashboard(parsed.pressure_data);
+                        packetBuffer.textContent = `[PACKET 4444 SYNC] Received ${parsed.pressure_data.length} packed frames | Timestamp: ${new Date().toLocaleTimeString()}`;
+                    }
+                } catch (e) {
+                    console.error("Payload decoding error", e);
+                }
+            };
+
+            ws.onclose = () => {
+                wsStatus.classList.remove('online');
+                statusText.textContent = 'Reconnecting...';
+                setTimeout(initWS, 2000);
+            };
+        }
+
+        // -------------------------------------------------------------
+        // 2. 32-BIT ESP32 BITWISE UNPACKING LOGIC
+        // -------------------------------------------------------------
+        function decodePackedValue(packedVal) {
+            const rawValue = packedVal & 0x0FFF;         // Bits 0-11: ADC Pressure Data (0 - 4095)
+            const sensorId = (packedVal >> 12) & 0x0F;  // Bits 12-15: Sensor ID (0 - 15)
+            const side = (packedVal >> 16) & 0x03;      // Bits 16-17: Side Flag (0=Left, 3=Right)
+
+            return {
+                id: sensorId,
+                side: side === 0 ? 'LEFT' : 'RIGHT',
+                value: rawValue,
+                // Top/Mid zone mapping heuristics (IDs 0-3 Top, 4-7 Mid)
+                zone: sensorId < 4 || (sensorId >= 8 && sensorId < 12) ? 'TOP' : 'MID/REAR'
+            };
+        }
+
+        // -------------------------------------------------------------
+        // 3. UI INITIALIZATION & CHART SETUP
+        // -------------------------------------------------------------
+        const grid = document.getElementById('heatmapGrid');
+        for (let i = 0; i < 16; i++) {
+            const side = i < 8 ? 'L' : 'R';
+            const num = i < 8 ? i : i - 8;
+            grid.innerHTML += `
+                <div class="sensor-node" id="node-${i}">
+                    <div class="id-tag">${side}${num} (${i < 4 || (i >= 8 && i < 12) ? 'Top' : 'Mid'})</div>
+                    <div class="val-tag" id="val-${i}">0</div>
+                </div>
+            `;
+        }
+
+        const ctx = document.getElementById('liveTrendChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Array.from({length: 16}, (_, i) => i < 8 ? `L${i}` : `R${i-8}`),
+                datasets: [{
+                    label: 'Live ADC Pressure Reading',
+                    data: new Array(16).fill(0),
+                    backgroundColor: Array.from({length: 16}, (_, i) => i < 8 ? '#06b6d4' : '#f43f5e'),
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 4095, grid: { color: '#1e293b' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // -------------------------------------------------------------
+        // 4. REAL-TIME DOM AND HEATMAP UPDATES
+        // -------------------------------------------------------------
+        function updateDashboard(packedArray) {
+            const currentValues = new Array(16).fill(0);
+
+            packedArray.forEach(packedVal => {
+                const decoded = decodePackedValue(packedVal);
+                if (decoded.id >= 0 && decoded.id < 16) {
+                    currentValues[decoded.id] = decoded.value;
+
+                    // Text value update
+                    const valNode = document.getElementById(`val-${decoded.id}`);
+                    if (valNode) valNode.textContent = decoded.value;
+
+                    // Dynamic Color Intensity (Heatmap effect)
+                    const cardNode = document.getElementById(`node-${decoded.id}`);
+                    if (cardNode) {
+                        const intensity = Math.min(1, decoded.value / 3500);
+                        const baseColor = decoded.side === 'LEFT' ? '6, 182, 212' : '244, 63, 94';
+                        cardNode.style.backgroundColor = `rgba(${baseColor}, ${0.05 + intensity * 0.45})`;
+                        cardNode.style.borderColor = `rgba(${baseColor}, ${0.3 + intensity * 0.7})`;
+                    }
+                }
+            });
+
+            // Update Chart
+            chart.data.datasets[0].data = currentValues;
+            chart.update('none');
+        }
+
+        // Start Live Telemetry Connection
+        initWS();
+    </script>
 </body>
 </html>
