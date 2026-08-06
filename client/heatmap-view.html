@@ -81,6 +81,33 @@
       font-weight: bold;
       margin-bottom: 8px;
     }
+    /*  */
+    .region{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:12px 0;
+}
+
+.region span:first-child{
+    width:80px;
+}
+
+.bar{
+    flex:1;
+    height:12px;
+    background:#243244;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#00b4ff,#00ff88);
+    transition:0.3s;
+}
+    /*  */
   </style>
 </head>
 <body>
@@ -135,6 +162,36 @@
       </div>
       <div class="info">10x10 Kernel Convolved Matrix &rightarrow; Color Mapped</div>
     </div>
+<!--  -->
+    <div class="card">
+    <h3>Region Dominance</h3>
+
+    <div class="region">
+        <span>Toe</span>
+        <div class="bar"><div id="toeBar" class="fill"></div></div>
+        <span id="toePercent">0%</span>
+    </div>
+
+    <div class="region">
+        <span>Forefoot</span>
+        <div class="bar"><div id="foreBar" class="fill"></div></div>
+        <span id="forePercent">0%</span>
+    </div>
+
+    <div class="region">
+        <span>Midfoot</span>
+        <div class="bar"><div id="midBar" class="fill"></div></div>
+        <span id="midPercent">0%</span>
+    </div>
+
+    <div class="region">
+        <span>Heel</span>
+        <div class="bar"><div id="heelBar" class="fill"></div></div>
+        <span id="heelPercent">0%</span>
+    </div>
+
+</div>
+    <!--  -->
   </div>
 </div>
 
