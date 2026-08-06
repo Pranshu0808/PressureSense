@@ -182,6 +182,7 @@ socket.onmessage = (event) => {
     });
 
     console.log(rawValues);
+  generateHeatmap();
 
 };
 let rawValues = new Array(16).fill(0);
@@ -214,9 +215,11 @@ let rawValues = new Array(16).fill(0);
     else                    return [255, 0, 0];
   }
 
-  const intensityGrid = Array.from({ length: inX }, () => new Float32Array(inY));
-  const countGrid     = Array.from({ length: inX }, () => new Uint8Array(inY));
-  const alphaGrid     = Array.from({ length: inX }, () => new Float32Array(inY));
+function generateHeatmap() {
+
+    const intensityGrid = Array.from({ length: inX }, () => new Float32Array(inY));
+    const countGrid = Array.from({ length: inX }, () => new Uint8Array(inY));
+    const alphaGrid = Array.from({ length: inX }, () => new Float32Array(inY));
 
   centers.forEach((c, idx) => {
     const baseValue = rawValues[idx];
@@ -320,6 +323,8 @@ let rawValues = new Array(16).fill(0);
   }
 
   outCtx.putImageData(outImageData, 0, 0);
+}
+  generateHeatmap();
 </script>
 
 </body>
