@@ -108,6 +108,31 @@
     transition:0.3s;
 }
     /*  */
+    #clinicalPanel{
+    margin-top:15px;
+}
+
+#clinicalPanel p{
+    margin:10px 0;
+    padding:10px 14px;
+    background:#182433;
+    border-left:4px solid #00bfff;
+    border-radius:8px;
+    color:#f1f5f9;
+    font-size:15px;
+    line-height:1.5;
+    transition:0.3s;
+}
+
+#clinicalPanel p:hover{
+    background:#223247;
+    transform:translateX(4px);
+}
+
+#obs5{
+    font-weight:700;
+}
+    /*  */
   </style>
 </head>
 <body>
@@ -192,6 +217,21 @@
 
 </div>
     <!--  -->
+    <div class="card">
+
+    <h3>Clinical Interpretation</h3>
+
+    <div id="clinicalPanel">
+
+        <p id="obs1">Waiting for live data...</p>
+        <p id="obs2"></p>
+        <p id="obs3"></p>
+        <p id="obs4"></p>
+        <p id="obs5"></p>
+
+    </div>
+
+</div>
   </div>
 </div>
 
@@ -387,6 +427,7 @@ const dynamicRadius = baseValue / stepDecrement;
 
   outCtx.putImageData(outImageData, 0, 0);
   updateRegionDominance();
+  updateClinicalInterpretation();
 }
   generateHeatmap();
   function updateRegionDominance() {
@@ -425,6 +466,89 @@ const dynamicRadius = baseValue / stepDecrement;
     document.getElementById("foreBar").style.width = foreP + "%";
     document.getElementById("midBar").style.width = midP + "%";
     document.getElementById("heelBar").style.width = heelP + "%";
+}
+  function updateClinicalInterpretation() {
+
+    const toe =
+        rawValues[0] +
+        rawValues[1] +
+        rawValues[2] +
+        rawValues[3];
+
+    const fore =
+        rawValues[4] +
+        rawValues[5] +
+        rawValues[6] +
+        rawValues[7];
+
+    const mid =
+        rawValues[8] +
+        rawValues[9] +
+        rawValues[10] +
+        rawValues[11];
+
+    const heel =
+        rawValues[12] +
+        rawValues[13] +
+        rawValues[14] +
+        rawValues[15];
+
+    const total = toe + fore + mid + heel;
+
+    if(total==0) return;
+
+    const toeP=(toe*100/total);
+    const foreP=(fore*100/total);
+    const midP=(mid*100/total);
+    const heelP=(heel*100/total);
+
+    const peak=Math.max(...rawValues);
+
+    let region="Toe";
+
+    if(fore>=toe && fore>=mid && fore>=heel)
+        region="Forefoot";
+
+    if(mid>=toe && mid>=fore && mid>=heel)
+        region="Midfoot";
+
+    if(heel>=toe && heel>=fore && heel>=mid)
+        region="Heel";
+
+    document.getElementById("obs1").innerHTML=
+    "• Peak loading detected in <b>"+region+"</b>.";
+
+    if(foreP>40)
+        document.getElementById("obs2").innerHTML=
+        "• High forefoot loading observed.";
+    else
+        document.getElementById("obs2").innerHTML=
+        "• Forefoot loading within normal range.";
+
+    if(heelP>40)
+        document.getElementById("obs3").innerHTML=
+        "• Increased heel pressure detected.";
+    else
+        document.getElementById("obs3").innerHTML=
+        "• Heel pressure appears balanced.";
+
+    if(toeP<10)
+        document.getElementById("obs4").innerHTML=
+        "• Reduced toe engagement observed.";
+    else
+        document.getElementById("obs4").innerHTML=
+        "• Toe engagement is adequate.";
+
+    if(peak>3600)
+        document.getElementById("obs5").innerHTML=
+        "<span style='color:#ff5555'>● High pressure hotspot detected.</span>";
+    else if(peak>2500)
+        document.getElementById("obs5").innerHTML=
+        "<span style='color:#ffcc00'>● Moderate plantar pressure.</span>";
+    else
+        document.getElementById("obs5").innerHTML=
+        "<span style='color:#66ff99'>● Pressure distribution appears balanced.</span>";
+
 }
 </script>
 
